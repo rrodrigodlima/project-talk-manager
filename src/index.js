@@ -3,6 +3,7 @@ const crypto = require('crypto');
 
 const path = require('path');
 const readJson = require('./utils/fs/readJson');
+const { validateEmail, validatePassword } = require('./middleware/userValidation');
 
 const app = express();
 app.use(express.json());
@@ -38,7 +39,7 @@ app.get('/talker/:id', async (req, res) => {
 
 // Login
 
-app.post('/login', (_req, res) => {
+app.post('/login', validateEmail, validatePassword, (_req, res) => {
   const tokenCreator = crypto.randomBytes(8).toString('hex');
   const token = { token: tokenCreator };
   res.status(HTTP_OK_STATUS).json(token);
