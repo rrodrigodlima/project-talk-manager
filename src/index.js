@@ -69,3 +69,15 @@ app.put('/talker/:id', authenticateToken, validateAll, async (req, res) => {
   await writeJson(talkersPath, talkers);
   res.status(200).json(updated);
 });
+
+app.delete('/talker/:id', authenticateToken, async (req, res) => {
+  const id = Number(req.params.id);
+  const talkers = await readJson(talkersPath);
+  const talker = talkers.find((t) => t.id === id);
+  if (talker) {
+    const index = talkers.indexOf(talker);
+    talkers.splice(index, 1);
+    await writeJson(talkersPath, talker);
+  }
+  res.sendStatus(204);
+});
