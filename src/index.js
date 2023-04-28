@@ -8,6 +8,7 @@ const { authenticateToken } = require('./middleware/tokenValidation');
 const validateAll = require('./middleware/postValidations');
 const addTalker = require('./utils/addTalker');
 const writeJson = require('./utils/fs/writeJson');
+const { validateRate } = require('./middleware/searchValidations');
 
 const app = express();
 app.use(express.json());
@@ -28,17 +29,34 @@ app.listen(PORT, () => {
 
 const talkersPath = path.resolve(__dirname, './talker.json');
 
-app.get('/talker/search', authenticateToken, async (req, res) => {
-  const searchTerm = req.query.q;
-  const talkers = await readJson(talkersPath);
-  const selectedTalker = talkers.filter((content) => content.name.includes(searchTerm));
-    res.status(200).json(selectedTalker);
-});
+const validateQ = async (req, res, next) => {
+  const { q } = req.query;
+  const data = await readJson(talkersPath);
+   if (q !== undefined) {
+    const filter = data.filter((e) => e.name.toLowerCase().includes(q.toLowerCase()));
+    req.filterParams = filter;
+    return next();
+  }
+  req.filterParams = data;
+  return next();
+};
+
+// app.get('/talker/search', authenticateToken, async (req, res) => {
+//   const searchTerm = req.query.q;
+//   const talkers = await readJson(talkersPath);
+//   const selectedTalker = talkers.filter((content) => content.name.includes(searchTerm));
+//     res.status(200).json(selectedTalker);
+// });
 
 app.get('/talker', async (_req, res) => {
   const talkers = await readJson(talkersPath);
   if (talkers.length === 0) return res.status(HTTP_OK_STATUS).json([]);
   return res.status(HTTP_OK_STATUS).json(talkers);
+});
+
+app.get('/talker/search', authenticateToken, validateQ, validateRate, async (_req, res) => {
+  const { filterParams } = _req;
+  return res.status(HTTP_OK_STATUS).json(filterParams);
 });
 
 app.get('/talker/:id', async (req, res) => {
