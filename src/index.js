@@ -8,7 +8,7 @@ const { authenticateToken } = require('./middleware/tokenValidation');
 const validateAll = require('./middleware/postValidations');
 const addTalker = require('./utils/addTalker');
 const writeJson = require('./utils/fs/writeJson');
-const { validateRate } = require('./middleware/searchValidations');
+const { validateRate, validateDate } = require('./middleware/searchValidations');
 
 const app = express();
 app.use(express.json());
@@ -29,7 +29,7 @@ app.listen(PORT, () => {
 
 const talkersPath = path.resolve(__dirname, './talker.json');
 
-const validateQ = async (req, res, next) => {
+const validateQ = async (req, _res, next) => {
   const { q } = req.query;
   const data = await readJson(talkersPath);
    if (q !== undefined) {
@@ -54,22 +54,23 @@ app.get('/talker', async (_req, res) => {
   return res.status(HTTP_OK_STATUS).json(talkers);
 });
 
-app.get('/talker/search', authenticateToken, validateQ, validateRate, async (_req, res) => {
-  const { filterParams } = _req;
-  return res.status(HTTP_OK_STATUS).json(filterParams);
+app.get('/talker/search', authenticateToken, validateQ, validateRate, validateDate, 
+  async (_req, res) => {
+    const { filterParams } = _req;
+    return res.status(HTTP_OK_STATUS).json(filterParams);
 });
 
 app.get('/talker/:id', async (req, res) => {
-    const talkers = await readJson(talkersPath);
-    const talker = talkers.find(({ id }) => id === Number(req.params.id));
-    if (!talker) return res.status(404).json({ message: 'Pessoa palestrante não encontrada' });
-    return res.status(HTTP_OK_STATUS).json(talker);
+  const talkers = await readJson(talkersPath);
+  const talker = talkers.find(({ id }) => id === Number(req.params.id));
+  if (!talker) return res.status(404).json({ message: 'Pessoa palestrante não encontrada' });
+  return res.status(HTTP_OK_STATUS).json(talker);
 });
 
 app.post('/talker', authenticateToken, validateAll, async (req, res) => {
-    const talker = req.body;
-    const newTalker = await addTalker(talkersPath, talker);
-    return res.status(201).json(newTalker);
+  const talker = req.body;
+  const newTalker = await addTalker(talkersPath, talker);
+  return res.status(201).json(newTalker);
 });
 
 app.put('/talker/:id', authenticateToken, validateAll, async (req, res) => {
