@@ -28,6 +28,13 @@ app.listen(PORT, () => {
 
 const talkersPath = path.resolve(__dirname, './talker.json');
 
+app.get('/talker/search', authenticateToken, async (req, res) => {
+  const searchTerm = req.query.q;
+  const talkers = await readJson(talkersPath);
+  const selectedTalker = talkers.filter((content) => content.name.includes(searchTerm));
+    res.status(200).json(selectedTalker);
+});
+
 app.get('/talker', async (_req, res) => {
   const talkers = await readJson(talkersPath);
   if (talkers.length === 0) return res.status(HTTP_OK_STATUS).json([]);
@@ -39,14 +46,6 @@ app.get('/talker/:id', async (req, res) => {
     const talker = talkers.find(({ id }) => id === Number(req.params.id));
     if (!talker) return res.status(404).json({ message: 'Pessoa palestrante não encontrada' });
     return res.status(HTTP_OK_STATUS).json(talker);
-});
-
-// Login
-
-app.post('/login', validateEmail, validatePassword, (_req, res) => {
-  const tokenCreator = crypto.randomBytes(8).toString('hex');
-  const token = { token: tokenCreator };
-  res.status(HTTP_OK_STATUS).json(token);
 });
 
 app.post('/talker', authenticateToken, validateAll, async (req, res) => {
@@ -80,4 +79,12 @@ app.delete('/talker/:id', authenticateToken, async (req, res) => {
     await writeJson(talkersPath, talker);
   }
   res.sendStatus(204);
+});
+
+// Login
+
+app.post('/login', validateEmail, validatePassword, (_req, res) => {
+  const tokenCreator = crypto.randomBytes(8).toString('hex');
+  const token = { token: tokenCreator };
+  res.status(HTTP_OK_STATUS).json(token);
 });
