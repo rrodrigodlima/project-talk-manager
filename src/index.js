@@ -7,6 +7,7 @@ const { validateEmail, validatePassword } = require('./middleware/userValidation
 const { authenticateToken } = require('./middleware/tokenValidation');
 const validateAll = require('./middleware/postValidations');
 const addTalker = require('./utils/addTalker');
+const writeJson = require('./utils/fs/writeJson');
 
 const app = express();
 app.use(express.json());
@@ -48,9 +49,23 @@ app.post('/login', validateEmail, validatePassword, (_req, res) => {
   res.status(HTTP_OK_STATUS).json(token);
 });
 
-app.post('/talker', authenticateToken, validateAll,
-  async (req, res) => {
+app.post('/talker', authenticateToken, validateAll, async (req, res) => {
     const talker = req.body;
     const newTalker = await addTalker(talkersPath, talker);
     return res.status(201).json(newTalker);
+});
+
+app.put('/talker/:id', authenticateToken, validateAll, async (req, res) => {
+  const id = Number(req.params.id);
+  const talkers = await readJson(talkersPath);
+  const talker = talkers.find((t) => t.id === id);
+  if (!talker) {
+    return res.status(404)
+     .json({ message: 'Pessoa palestrante não encontrada' });
+  } 
+  const index = talkers.indexOf(talker);
+  const updated = { ...talker, ...req.body };
+  talkers.splice(index, 1, updated);
+  await writeJson(talkersPath, talkers);
+  res.status(200).json(updated);
 });
