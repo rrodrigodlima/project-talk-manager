@@ -88,6 +88,23 @@ app.put('/talker/:id', authenticateToken, validateAll, async (req, res) => {
   res.status(200).json(updated);
 });
 
+app.patch('/talker/rate/:id', authenticateToken, async (req, res) => {
+  const { params: { id }, body: { rate } } = req;
+
+  const talkers = await readJson(talkersPath);
+  if (rate !== undefined) {
+    if (!([1, 2, 3, 4, 5].includes(Number(rate)))) {
+      return res.status(400)
+        .json({ message: 'O campo "rate" deve ser um número inteiro entre 1 e 5' });
+    }
+    const index = talkers.findIndex((e) => Number(e.id) === Number(id));
+    talkers[index].talk.rate = Number(rate);
+    await writeJson(talkersPath, talkers);
+    return res.status(204).json();
+  }
+  return res.status(400).json({ message: 'O campo "rate" é obrigatório' });
+});
+
 app.delete('/talker/:id', authenticateToken, async (req, res) => {
   const id = Number(req.params.id);
   const talkers = await readJson(talkersPath);
